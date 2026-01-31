@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anime Dance AI</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #e5e7eb;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+  }
+  h1 { color: #38bdf8; }
+  .character-select button {
+    margin: 5px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    background: #38bdf8;
+    color: black;
+  }
+  .character-select button:hover { background: #0ea5e9; }
+  .character-container {
+    margin-top: 20px;
+    position: relative;
+  }
+  .character {
+    width: 200px;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+  }
+  .dance {
+    animation: danceMove 1s infinite alternate;
+  }
+  @keyframes danceMove {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+    100% { transform: translateY(0) rotate(-5deg); }
+  }
+  .chatbox {
+    margin-top: 20px;
+    background: #020617;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 200px;
+    overflow-y: auto;
+    text-align: left;
+  }
+  input, button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+  }
+  input { background: #1e293b; color: white; }
+  button { background: #38bdf8; color: black; font-weight: bold; cursor: pointer; }
+  button:hover { background: #0ea5e9; }
+  .message { margin: 5px 0; }
+  .user { color: #38bdf8; font-weight: bold; }
+  .ai { color: #22c55e; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>Anime Dance AI</h1>
+<div class="character-select">
+  <button onclick="selectCharacter('girl1')">Sakura</button>
+  <button onclick="selectCharacter('girl2')">Asuna</button>
+  <button onclick="selectCharacter('girl3')">Mikasa</button>
+</div>
+
+<div class="character-container">
+  <img id="character" class="character" src="https://via.placeholder.com/200x300.png?text=Choose+Character" alt="Character">
+</div>
+
+<div class="chatbox" id="chatbox"></div>
+<input type="text" id="userInput" placeholder="Type a message...">
+<button id="sendBtn">Send</button>
+
+<script>
+let selectedCharacter = '';
+let affection = 50; // starts neutral
+
+function selectCharacter(name) {
+  selectedCharacter = name;
+  const img = document.getElementById('character');
+  img.classList.add('dance');
+  if(name === 'girl1') img.src = 'https://via.placeholder.com/200x300.png?text=Sakura';
+  if(name === 'girl2') img.src = 'https://via.placeholder.com/200x300.png?text=Asuna';
+  if(name === 'girl3') img.src = 'https://via.placeholder.com/200x300.png?text=Mikasa';
+}
+
+const chatbox = document.getElementById('chatbox');
+const userInput = document.getElementById('userInput');
+const sendBtn = document.getElementById('sendBtn');
+
+sendBtn.addEventListener('click', async () => {
+  const message = userInput.value.trim();
+  if (!message || !selectedCharacter) return alert('Select a character and type a message!');
+
+  const userMsg = document.createElement('div');
+  userMsg.classList.add('message', 'user');
+  userMsg.textContent = 'You: ' + message;
+  chatbox.appendChild(userMsg);
+
+  userInput.value = '';
+  chatbox.scrollTop = chatbox.scrollHeight;
+
+  const aiMsg = document.createElement('div');
+  aiMsg.classList.add('message', 'ai');
+  aiMsg.textContent = selectedCharacter + ': ...';
+  chatbox.appendChild(aiMsg);
+  chatbox.scrollTop = chatbox.scrollHeight;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_OPENAI_API_KEY'
+      },
+      body: JSON.stringify({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: selectedCharacter + ' is a funny anime girl. She can dance, roast, flirt, and show feelings.' },
+          { role: 'user', content: message }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    const aiText = data.choices[0].message.content || 'No response';
+    aiMsg.textContent = selectedCharacter + ': ' + aiText;
+
+    // simple affection increase/decrease
+    if(aiText.toLowerCase().includes('love')) affection += 5;
+    if(aiText.toLowerCase().includes('hate')) affection -= 5;
+
+  } catch(err) {
+    aiMsg.textContent = selectedCharacter + ': Error generating response';
+  }
+});
+</script>
+
+</body>
+</html>
